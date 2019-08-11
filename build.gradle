@@ -1,0 +1,164 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        jcenter()
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:2.1.4.RELEASE")
+    }
+}
+
+plugins {
+    id "com.gorylenko.gradle-git-properties" version "1.4.17"
+    id "com.github.spotbugs" version "1.6.8"
+}
+
+group 'com.ddemidiuk'
+version '1.7.0'
+
+apply plugin: 'java'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+apply plugin: 'checkstyle'
+apply plugin: 'pmd'
+apply plugin: 'maven'
+apply plugin: 'jacoco'
+
+sourceCompatibility = JavaVersion.VERSION_11
+targetCompatibility = JavaVersion.VERSION_11
+
+repositories {
+    mavenCentral()
+    jcenter()
+}
+
+def fbxml = project.hasProperty('fbxml') ?: false
+def pmxml = project.hasProperty('pmxml') ?: false
+
+def codechecksFolder = "${rootDir}/codechecks"
+def checkStyleMainConfig = new File(codechecksFolder, "/checkstyle.xml")
+
+def nexusUser = project.hasProperty('nexusUser') ? project.nexusUser : System.env.NX_USER != null ? System.env.NX_USER : "default"
+def nexusPass = project.hasProperty('nexusPass') ? project.nexusPass : System.env.NX_PASS != null ? System.env.NX_PASS : "default"
+
+dependencies {
+    compile("org.springframework.boot:spring-boot-starter-web") {
+        exclude module: "spring-boot-starter-tomcat"
+    }
+    compile("org.springframework.boot:spring-boot-starter-jetty")
+
+    compile("org.springframework.boot:spring-boot-starter-actuator")
+    compile group: 'io.springfox', name: 'springfox-swagger2', version: '2.9.2'
+    compile group: 'io.springfox', name: 'springfox-swagger-ui', version: '2.9.2'
+    compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.5'
+    compile group: 'org.apache.commons', name: 'commons-csv', version: '1.4'
+    compile 'io.dropwizard.metrics:metrics-core:3.1.2'
+    compile 'io.dropwizard.metrics:metrics-healthchecks:3.1.2'
+    compile 'io.dropwizard.metrics:metrics-servlet:3.1.2'
+    compile 'io.dropwizard.metrics:metrics-jetty9:3.1.2'
+    compile 'io.dropwizard.metrics:metrics-httpclient:3.1.2'
+    compile 'io.dropwizard.metrics:metrics-jvm:3.1.2'
+    compile group: 'com.readytalk', name: 'metrics3-statsd', version: '4.2.0'
+    compile group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: '2.8.6'
+    compile 'commons-codec:commons-codec:1.10'
+    compile group: 'com.github.spotbugs', name: 'spotbugs-annotations', version: '3.1.12'
+    compile group: 'commons-io', name: 'commons-io', version: '2.6'
+    compile group: 'commons-fileupload', name: 'commons-fileupload', version: '1.4'
+
+    testCompile("org.springframework.boot:spring-boot-starter-test") {
+        exclude group: 'junit', module: 'junit'
+    }
+    testCompile group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.4.2'
+    testCompile group: 'commons-io', name: 'commons-io', version: '2.6'
+    testRuntime group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.4.2'
+}
+
+
+
+task printJavaInformation() {
+    println("Gradle java.version: " + System.getProperty("java.version"))
+    println("Gradle java.home: " + System.getProperty("java.home"))
+}
+
+build.dependsOn printJavaInformation
+
+bootJar {
+}
+
+checkstyle {
+    configFile = checkStyleMainConfig
+    toolVersion = '7.1.1'
+    ignoreFailures = false // set to 'false' to fail build on error(s)
+    System.setProperty('checkstyle.config.location', codechecksFolder)
+}
+
+spotbugs {
+    toolVersion = '3.1.12'
+    includeFilter = new File(rootDir, '/codechecks/findbugs-security-include.xml')
+    excludeFilter = new File(rootDir, '/codechecks/findbugs-security-exclude.xml')
+    reportsDir = file("$project.buildDir/reports/findbugs")
+}
+
+pmd {
+    toolVersion = '5.5.1'
+    ignoreFailures = true
+    sourceSets = [sourceSets.main]
+    reportsDir = file("$project.buildDir/reports/pmd")
+    ruleSetFiles = files("${codechecksFolder}/ruleset.xml")
+}
+
+tasks.withType(Pmd) {
+    reports {
+        xml.enabled = pmxml
+        html.enabled = !xml.isEnabled()
+    }
+}
+
+tasks.withType(com.github.spotbugs.SpotBugsTask) {
+    reports {
+        xml.enabled = fbxml
+        html.enabled = !xml.isEnabled()
+    }
+}
+
+jacocoTestReport {
+    group = "Reporting"
+
+    reports {
+        xml.enabled true
+        csv.enabled false
+        xml.destination file("${buildDir}/reports/coverage-unit.xml")
+        html.destination file("${buildDir}/reports/coverage-unit.html")
+    }
+
+    afterEvaluate {
+        classDirectories = files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [
+                    '**/*Test'
+            ])
+        })
+    }
+}
+
+test {
+    useJUnitPlatform()
+}
+
+build.dependsOn jacocoTestReport
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: "http://nxslcdcpvm01.nyumc.org:8081/nexus/content/repositories/nyu-releases") {
+                authentication(userName: nexusUser, password: nexusPass)
+            }
+            snapshotRepository(url: "http://nxslcdcpvm01.nyumc.org:8081/nexus/content/repositories/nyu-snapshots") {
+                authentication(userName: nexusUser, password: nexusPass)
+            }
+        }
+    }
+}
+
+springBoot {
+    buildInfo()
+}

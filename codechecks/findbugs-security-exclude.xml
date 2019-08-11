@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FindBugsFilter>
+    <!-- Just some samples
+    <Match>
+        <Package name="my[.]sample[.]package([.].*)?" />
+    </Match>
+    <Match>
+        <Package name="~com[.]hybris[.]datahub[.]c4c[.]endpoint[.]mock[.]schema([.].*)?" />
+    </Match>
+    <Match>
+        <Class name=".*\.MyClass.*" />
+    </Match>
+
+    <Match>
+        <Class name="com.example.ExampleClass" />
+        <Bug pattern="PATH_TRAVERSAL_IN" />
+    </Match>
+    -->
+
+    <!-- disable warning on mockito DSL like the following -->
+    <!--     verify(spy, atLeast(0)).getProfileType(); -->
+    <Match>
+        <Class name="~.*Test"/>
+        <Bug pattern="RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT"/>
+    </Match>
+   <Match>
+	<Bug pattern="NM_SAME_SIMPLE_NAME_AS_SUPERCLASS"/>
+   </Match>
+</FindBugsFilter>
