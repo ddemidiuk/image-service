@@ -4,7 +4,6 @@ import org.apache.commons.io.FileUtils;
 import org.ddemidiuk.example.images.configuration.properties.ApplicationProperties;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -89,7 +88,7 @@ public class FileSystemStoreFileService implements StoreFileService {
         }
         BufferedImage img = new BufferedImage(PREVIEW_WIDTH, PREVIEW_HEIGHT, BufferedImage.TYPE_INT_RGB);
         img.createGraphics().drawImage(ImageIO.read(file)
-                .getScaledInstance(PREVIEW_WIDTH, PREVIEW_HEIGHT, Image.SCALE_SMOOTH),0,0,null);
+                .getScaledInstance(PREVIEW_WIDTH, PREVIEW_HEIGHT, java.awt.Image.SCALE_SMOOTH),0,0,null);
         ImageIO.write(img, "jpg", newPreviewFile);
     }
 }
