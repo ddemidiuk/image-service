@@ -64,6 +64,7 @@ dependencies {
     compile group: 'com.github.spotbugs', name: 'spotbugs-annotations', version: '3.1.12'
     compile group: 'commons-io', name: 'commons-io', version: '2.6'
     compile group: 'commons-fileupload', name: 'commons-fileupload', version: '1.4'
+    compile group: 'org.springframework.data', name: 'spring-data-keyvalue', version: '2.1.10.RELEASE'
 
     testCompile("org.springframework.boot:spring-boot-starter-test") {
         exclude group: 'junit', module: 'junit'

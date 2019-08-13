@@ -9,14 +9,12 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.web.servlet.MultipartConfigFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.util.unit.DataSize;
 import org.springframework.util.unit.DataUnit;
 import org.springframework.web.client.RestTemplate;
-import service.FileSystemStoreFileService;
-import service.StoreFileService;
 
 import javax.servlet.MultipartConfigElement;
-import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -32,30 +30,30 @@ public class ApplicationConfig {
     private int executorServiceThreadNumber;
 
     @Bean
-    public StoreFileService storeFileService(ApplicationProperties properties) throws IOException {
-        return new FileSystemStoreFileService(properties);
-    }
-
-    @Bean
     MultipartConfigElement multipartConfigElement(ApplicationProperties properties) {
         MultipartConfigFactory factory = new MultipartConfigFactory();
-        factory.setMaxFileSize(DataSize.of(properties.getImageMaxSize(), DataUnit.KILOBYTES));
-        factory.setMaxRequestSize(DataSize.of(properties.getImageMaxSize() * 3, DataUnit.KILOBYTES));
+        factory.setMaxFileSize(DataSize.of(properties.getImageMaxSizeKb(), DataUnit.KILOBYTES));
+        factory.setMaxRequestSize(DataSize.of(properties.getImageMaxSizeKb() * 3, DataUnit.KILOBYTES));
         return factory.createMultipartConfig();
     }
 
 /*    @Bean
     MultipartResolver multipartResolver(ApplicationProperties properties) {
         CommonsMultipartResolver multipartResolver = new CommonsMultipartResolver();
-        multipartResolver.setMaxUploadSize(properties.getImageMaxSize() * BYTES_IN_KILOBYTE);
-        multipartResolver.setMaxInMemorySize(properties.getImageMaxSize() * BYTES_IN_KILOBYTE * 3);
+        multipartResolver.setMaxUploadSize(properties.getImageMaxSizeKb() * BYTES_IN_KILOBYTE);
+        multipartResolver.setMaxInMemorySize(properties.getImageMaxSizeKb() * BYTES_IN_KILOBYTE * 3);
         multipartResolver.setDefaultEncoding("utf-8");
         return multipartResolver;
     }*/
 
     @Bean
-    public RestTemplate restTemplate() {
-        return new RestTemplate();
+    public RestTemplate restTemplate(ApplicationProperties properties) {
+        HttpComponentsClientHttpRequestFactory httpRequestFactory = new HttpComponentsClientHttpRequestFactory();
+        httpRequestFactory.setConnectionRequestTimeout(properties.getUrlConnectTimeoutMillis());
+        httpRequestFactory.setConnectTimeout(properties.getUrlConnectTimeoutMillis());
+        httpRequestFactory.setReadTimeout(properties.getUrlReadTimeoutMillis());
+
+        return new RestTemplate(httpRequestFactory);
     }
 
     /**
@@ -76,12 +74,12 @@ public class ApplicationConfig {
      *
      * @return new {@link ExecutorService}
      */
-    @Bean("notification-service-executor")
+    @Bean("notification-org.ddemidiuk.example.images.service-executor")
     public ExecutorService notificationServiceExecutor(MetricRegistry metricRegistry) {
         return new InstrumentedExecutorService(
                 Executors.newFixedThreadPool(executorServiceThreadNumber),
                 metricRegistry,
-                "notification-service-executor");
+                "notification-org.ddemidiuk.example.images.service-executor");
     }
 
     /**

@@ -21,7 +21,7 @@ Running it as simple as executing main class HL7Router right from IDE or loading
 
 ```
 cd ./build/libs
-java -jar image-service-0.0.1-SNAPSHOT.jar --spring.config.location='./configs/application.properties'
+java -jar image-org.ddemidiuk.example.images.service-0.0.1-SNAPSHOT.jar --spring.config.location='./configs/application.properties'
 ```
 
 Once the server is started, INFO entry will appear in the console log output saying:

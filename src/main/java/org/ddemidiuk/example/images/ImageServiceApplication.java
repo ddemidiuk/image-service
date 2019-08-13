@@ -8,7 +8,7 @@ import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 
 /**
- * Find-a-Doc application.
+ * Image service application.
  */
 @SpringBootApplication
 public class ImageServiceApplication {
